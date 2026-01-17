@@ -6,12 +6,14 @@ interface MapProps {
   data: any[];
   selectedCountry: string;
   onCountrySelect: (country: string) => void;
+  className?: string;
 }
 
 export default function ChoroplethMap({
   data,
   selectedCountry,
-  onCountrySelect
+  onCountrySelect,
+  className
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -80,7 +82,7 @@ export default function ChoroplethMap({
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
 
-      countries.each(function() {
+      countries.each(function () {
         const totalLength = (this as SVGPathElement).getTotalLength();
         d3.select(this)
           .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
@@ -91,7 +93,7 @@ export default function ChoroplethMap({
         .duration(1000)
         .delay((d, i) => i * 15)
         .attr("stroke-dashoffset", 0)
-        .on("end", function(d) {
+        .on("end", function (d) {
           const v = valueByCountry.get(d.properties.iso_a2);
           d3.select(this)
             .transition()
@@ -133,9 +135,5 @@ export default function ChoroplethMap({
     });
   }, [data, selectedCountry]);
 
-  return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg ref={svgRef}></svg>
-    </div>
-  );
+  return <div ref={containerRef} className={`w-full h-full ${className || ""}`}><svg ref={svgRef}></svg></div>;
 }

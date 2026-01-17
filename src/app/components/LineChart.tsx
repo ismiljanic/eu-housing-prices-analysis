@@ -5,9 +5,10 @@ import { getTooltip } from "../utils/Tooltip";
 interface LineChartProps {
   country: string;
   data: any[];
+  className?: string;
 }
 
-export default function LineChart({ country, data }: LineChartProps) {
+export default function LineChart({ country, data, className }: LineChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -16,13 +17,18 @@ export default function LineChart({ country, data }: LineChartProps) {
 
     const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
 
-    const margin = { top: 40, right: 30, bottom: 30, left: 50 };
-    const width = containerWidth - margin.left - margin.right;
-    const height = containerHeight - margin.top - margin.bottom;
+    const margin = {
+      top: containerHeight * 0.05,
+      right: containerWidth * 0.07,
+      bottom: containerHeight * 0.08,
+      left: containerWidth * 0.08
+    };
 
     const fontSize = Math.max(12, containerWidth * 0.012);
+    const lineWidth = Math.max(2, containerWidth * 0.003);
     const circleRadius = Math.max(3, containerWidth * 0.006);
-    const lineWidth = Math.max(1, containerWidth * 0.002);
+    const width = containerWidth - margin.left - margin.right;
+    const height = containerHeight - margin.top - margin.bottom;
 
     const filteredData = data.filter(d => d.country === country);
     if (!filteredData.length) return;
@@ -67,7 +73,7 @@ export default function LineChart({ country, data }: LineChartProps) {
       .x(d => x(d.date))
       .y(d => y(d.hpi));
 
-    const lineDuration = 1200;
+    const lineDuration = 600;
 
     const path = g.selectAll(".line-path").data([filteredData]);
 
@@ -114,8 +120,40 @@ export default function LineChart({ country, data }: LineChartProps) {
         })
     );
 
-    const tooltip = getTooltip("line-tooltip");
-    const circles = g.selectAll(".data-circle").data(filteredData);
+    const tooltip = getTooltip("lineChart");
+
+    const circles = g.selectAll<SVGCircleElement, any>(".data-circle")
+      .data(filteredData);
+
+    circles.join(
+      enter => {
+        const c = enter.append("circle")
+          .attr("class", "data-circle")
+          .attr("r", 0)
+          .attr("cx", d => x(d.date))
+          .attr("cy", d => y(d.hpi))
+          .attr("fill", "steelblue")
+          .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1)
+              .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`);
+          })
+          .on("mousemove", (event) => {
+            tooltip.style("left", `${event.pageX + 12}px`)
+              .style("top", `${event.pageY + 12}px`);
+          })
+          .on("mouseout", () => tooltip.style("opacity", 0));
+
+        c.transition().duration(800).attr("r", circleRadius);
+        return c;
+      },
+      update => {
+        update.transition().duration(800)
+          .attr("cx", d => x(d.date))
+          .attr("cy", d => y(d.hpi))
+          .attr("r", circleRadius);
+        return update;
+      }
+    );
 
     circles.join(
       enter => enter.append("circle")
@@ -123,21 +161,17 @@ export default function LineChart({ country, data }: LineChartProps) {
         .attr("r", 0)
         .attr("cx", d => x(d.date))
         .attr("cy", d => y(d.hpi))
-        .attr("fill", "steelblue"),
-      update => update
-        .attr("cx", d => x(d.date))
-        .attr("cy", d => y(d.hpi))
-        .attr("r", 0)
-    );
-
-    circles.on("mouseover", (event, d) => {
-      tooltip.style("opacity", 1)
-        .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`)
-        .style("left", `${event.pageX + 12}px`)
-        .style("top", `${event.pageY + 12}px`);
-    })
+        .attr("fill", "steelblue")
+        .call(sel => sel.transition().duration(800).attr("r", circleRadius)),
+      update => update.transition().duration(800).attr("cx", d => x(d.date)).attr("cy", d => y(d.hpi)).attr("r", circleRadius)
+    )
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+          .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`);
+      })
       .on("mousemove", (event) => {
-        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
+        tooltip.style("left", `${event.pageX + 12}px`)
+          .style("top", `${event.pageY + 12}px`);
       })
       .on("mouseout", () => tooltip.style("opacity", 0));
 
@@ -149,5 +183,5 @@ export default function LineChart({ country, data }: LineChartProps) {
 
   }, [country, data, containerRef.current?.clientWidth, containerRef.current?.clientHeight]);
 
-  return <div ref={containerRef} className="w-full h-full"><svg ref={svgRef}></svg></div>;
+  return <div ref={containerRef} className={`w-full h-full ${className || ""}`}><svg ref={svgRef}></svg></div>;
 }

@@ -5,9 +5,10 @@ import { getTooltip } from "../utils/Tooltip";
 interface DualAxisProps {
   country: string;
   data: any[];
+  className?: string;
 }
 
-export default function DualAxisChart({ country, data }: DualAxisProps) {
+export default function DualAxisChart({ country, data, className }: DualAxisProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -48,9 +49,23 @@ export default function DualAxisChart({ country, data }: DualAxisProps) {
       .domain([d3.min(filteredData, d => d.interest_rate) * 1.1, d3.max(filteredData, d => d.interest_rate) * 1.1])
       .range([height, 0]);
 
-    g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
-    g.append("g").call(d3.axisLeft(yLeft));
-    g.append("g").attr("transform", `translate(${width},0)`).call(d3.axisRight(yRight));
+      const xAxis = g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+
+    xAxis.selectAll("text").style("font-size", `${fontSize}px`);
+
+    const yAxisLeft = g.append("g")
+      .call(d3.axisLeft(yLeft));
+
+    yAxisLeft.selectAll("text").style("font-size", `${fontSize}px`);
+
+    const yAxisRight = g.append("g")
+      .attr("transform", `translate(${width},0)`)
+      .call(d3.axisRight(yRight));
+
+    yAxisRight.selectAll("text").style("font-size", `${fontSize}px`);
+
 
     const lineHPI = d3.line().x(d => x(d.date)).y(d => yLeft(d.hpi));
     const lineRate = d3.line().x(d => x(d.date)).y(d => yRight(d.interest_rate));
@@ -107,6 +122,38 @@ export default function DualAxisChart({ country, data }: DualAxisProps) {
       .attr("fill", "orange")
       .attr("opacity", 0.5);
 
+    const legendFontSize = Math.max(12, containerWidth * 0.012);
+    const legendOffsetX = width / 2 - 80;
+    const legendOffsetY = -margin.top / 2;
+
+    svg.append("g")
+      .attr("transform", `translate(${margin.left + legendOffsetX}, ${margin.top + legendOffsetY})`)
+      .call(g => {
+        g.append("rect")
+          .attr("width", 12)
+          .attr("height", 12)
+          .attr("fill", "steelblue");
+        g.append("text")
+          .attr("x", 18)
+          .attr("y", 10)
+          .style("font-size", legendFontSize)
+          .text("HPI");
+      });
+
+    svg.append("g")
+      .attr("transform", `translate(${margin.left + legendOffsetX + 80}, ${margin.top + legendOffsetY})`)
+      .call(g => {
+        g.append("rect")
+          .attr("width", 12)
+          .attr("height", 12)
+          .attr("fill", "orange");
+        g.append("text")
+          .attr("x", 18)
+          .attr("y", 10)
+          .style("font-size", legendFontSize)
+          .text("Interest Rate");
+      });
+
     setTimeout(() => {
       hpiCircles.transition().duration(800).attr("r", circleRadius);
       rateCircles.transition().duration(800).attr("r", circleRadius);
@@ -132,5 +179,5 @@ export default function DualAxisChart({ country, data }: DualAxisProps) {
 
   }, [country, data, containerRef.current?.clientWidth, containerRef.current?.clientHeight]);
 
-  return <div ref={containerRef} className="w-full h-full"><svg ref={svgRef}></svg></div>;
+  return <div ref={containerRef} className={`w-full h-full ${className || ""}`}><svg ref={svgRef}></svg></div>;
 }
