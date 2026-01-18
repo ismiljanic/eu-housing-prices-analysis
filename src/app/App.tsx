@@ -159,27 +159,35 @@ export default function App() {
 
 
   return (
-    <div className="h-screen bg-gray-50 grid md:grid-cols-[auto_1fr]">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:grid md:grid-cols-[auto_1fr]">
 
       {/* Header for Mobile */}
-      <header className="md:hidden w-full bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+      <header className="md:hidden w-full bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <h1 className="text-lg font-bold text-gray-900">EU Housing Dashboard</h1>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
+          className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          aria-label="Toggle menu"
         >
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            {sidebarOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
       </header>
 
       {/* Mobile Slide-down Menu */}
-      {sidebarOpen && (
-        <div className="md:hidden bg-white p-4 space-y-3">
+      <div className={`
+        md:hidden bg-white border-b border-gray-200 overflow-hidden transition-all duration-300 ease-in-out
+        ${sidebarOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}
+      `}>
+        <div className="p-4 space-y-4">
           {/* Country Selector */}
           <div>
-            <label className="text-sm text-gray-700 font-medium">Country</label>
+            <label className="text-sm text-gray-700 font-medium block mb-2">Country</label>
             <CountryDropdown
               countries={countries}
               selectedCountry={selectedCountry}
@@ -188,10 +196,10 @@ export default function App() {
           </div>
 
           {/* Year Range */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex flex-col">
-              <label className="text-sm text-gray-700 font-medium mb-1">Start Year</label>
-              <span className="text-sm text-gray-500 mb-1">{yearRange[0]}</span>
+              <label className="text-sm text-gray-700 font-medium mb-2">Start Year</label>
+              <span className="text-sm text-gray-500 mb-2">{yearRange[0]}</span>
               <input
                 type="range"
                 min={2010}
@@ -201,13 +209,13 @@ export default function App() {
                   const newStart = Number(e.target.value);
                   setYearRange([newStart, Math.max(newStart, yearRange[1])]);
                 }}
-                className="w-full"
+                className="w-full h-2"
               />
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm text-gray-700 font-medium mb-1">End Year</label>
-              <span className="text-sm text-gray-500 mb-1">{yearRange[1]}</span>
+              <label className="text-sm text-gray-700 font-medium mb-2">End Year</label>
+              <span className="text-sm text-gray-500 mb-2">{yearRange[1]}</span>
               <input
                 type="range"
                 min={2010}
@@ -217,11 +225,11 @@ export default function App() {
                   const newEnd = Number(e.target.value);
                   setYearRange([Math.min(yearRange[0], newEnd), newEnd]);
                 }}
-                className="w-full"
+                className="w-full h-2"
               />
             </div>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 text-center">
               Showing data from <span className="font-semibold">{yearRange[0]}</span> to <span className="font-semibold">{yearRange[1]}</span>
             </p>
           </div>
@@ -231,23 +239,23 @@ export default function App() {
               setShowAnalysis(true);
               setSidebarOpen(false);
             }}
-            className="w-full py-2 text-sm font-medium bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
+            className="w-full py-3 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 active:bg-gray-700 transition-colors"
           >
             Show Analysis
           </button>
         </div>
-      )}
+      </div>
 
       {/* Desktop Sidebar */}
       <aside
-        className="hidden md:flex flex-col justify-between h-[45vh] w-64 bg-white border-r border-gray-200 p-6
-             sticky top-1/2 -translate-y-1/2 ml-6"
+        className="hidden md:flex flex-col justify-between w-64 bg-white border-r border-gray-200 p-6
+             sticky top-6 h-[calc(100vh-3rem)] rounded-x"
       >
         {/* Main Sidebar Container */}
-        <div className="flex flex-col justify-between h-full overflow-hidden mx-auto">
+        <div className="flex flex-col justify-between h-full p-2 overflow-y-auto space-y-6">
 
           {/* Top Section */}
-          <div className="flex flex-col space-y-6 ml-1">
+          <div className="flex flex-col space-y-6">
             {/* Title */}
             <div>
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -306,32 +314,32 @@ export default function App() {
             {/* Analysis Button */}
             <button
               onClick={() => setShowAnalysis(true)}
-              className="mt-4 w-full py-2 text-sm font-medium bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
+              className="w-full py-2 text-sm font-medium bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
             >
               Show Analysis
             </button>
           </div>
 
           {/* Footer */}
-          <div className="text-xs text-gray-400 mt-6 ml-2">
+          <div className="text-xs text-gray-400 mt-4">
             Data Source: EU Housing Market
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex flex-col h-screen p-4 md:p-6 pb-16">
-        <div className="grid grid-cols-12 gap-6 flex-1">
+      <main className="flex flex-col min-h-screen p-3 sm:p-4 md:p-6 pb-safe">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 flex-1">
 
-          {/* Top Row */}
-          <div className="col-span-12 lg:col-span-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow">
-            <h2 className="text-xl text-gray-900 mb-2">
+          {/* Top Row - Map */}
+          <div className="lg:col-span-8 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow">
+            <h2 className="text-lg md:text-xl text-gray-900 mb-1 md:mb-2">
               HPI & Inflation Across EU
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
               Year-over-year housing price index (HPI) and inflation rates by country
             </p>
-            <div className="w-full h-[30vh] md:h-[40vh] relative overflow-hidden rounded-lg">
+            <div className="w-full h-[300px] sm:h-[350px] md:h-[40vh] relative overflow-hidden rounded-lg">
               <ChoroplethMap
                 data={mapData}
                 selectedCountry={selectedCountry}
@@ -341,48 +349,50 @@ export default function App() {
             </div>
           </div>
 
+          {/* Top Row - Dual Axis */}
           <div
-            className="col-span-12 lg:col-span-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            className="lg:col-span-4 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.99]"
             onClick={() => setFocusedView('dualAxis')}
           >
-            <h2 className="text-lg text-gray-900 mb-2">HPI vs ECB Interest Rate</h2>
-            <p className="text-sm text-gray-500 mb-4">Quarterly housing price index alongside ECB rate changes</p>
-            <div className="w-full h-[25vh] md:h-[30vh] relative overflow-hidden cursor-default">
+            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">HPI vs ECB Interest Rate</h2>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly housing price index alongside ECB rate changes</p>
+            <div className="w-full h-[250px] sm:h-[280px] md:h-[30vh] relative overflow-hidden">
               <DualAxisChart country={selectedCountry} data={filteredData} />
             </div>
             <p className="text-xs text-gray-400 mt-25">Click to enlarge</p>
           </div>
 
-          {/* Bottom Row */}
+          {/* Bottom Row - Line Chart */}
           <div
-            className="col-span-12 lg:col-span-4 bg-white rounded-2xl mb-4 shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer flex flex-col"
+            className="lg:col-span-4 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.99] flex flex-col"
             onClick={() => setFocusedView('lineChart')}
           >
-            <h2 className="text-lg text-gray-900 mb-2">Housing Price Index Timeline</h2>
-            <p className="text-sm text-gray-500 mb-4">Quarterly HPI changes over time for the selected country</p>
+            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">Housing Price Index Timeline</h2>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly HPI changes over time for the selected country</p>
 
             {/* Chart container grows to fill remaining space */}
-            <div className="flex-1 w-full relative overflow-hidden">
+            <div className="flex-1 w-full min-h-[250px] sm:min-h-[280px] relative overflow-hidden">
               <LineChart country={selectedCountry} data={filteredData} className="w-full h-full" />
             </div>
 
             <p className="text-xs text-gray-400 mt-2">Click to enlarge</p>
           </div>
 
+          {/* Bottom Row - Scatter */}
           <div
-            className="col-span-12 lg:col-span-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer mb-4"
+            className="lg:col-span-8 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.99]"
             onClick={() => setFocusedView('scatter')}
           >
-            <h2 className="text-xl text-gray-900 mb-2">HPI vs Interest Rate Change</h2>
-            <p className="text-sm text-gray-500 mb-4">Relationship between quarterly interest rate changes and HPI growth</p>
-            <div className="w-full h-[20vh] md:h-[25vh] relative overflow-hidden">
+            <h2 className="text-lg md:text-xl text-gray-900 mb-1 md:mb-2">HPI vs Interest Rate Change</h2>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Relationship between quarterly interest rate changes and HPI growth</p>
+            <div className="w-full h-[250px] sm:h-[280px] md:h-[25vh] relative overflow-hidden">
               <ScatterPlot country={selectedCountry} data={filteredData} />
             </div>
             <p className="text-xs text-gray-400 mt-20">Click to enlarge</p>
           </div>
         </div>
 
-        {/* Modals & Analysis remain the same */}
+        {/* Modals & Analysis */}
         {focusedView === 'dualAxis' && (
           <FullChartModal
             title={`HPI vs ECB Interest Rate — ${selectedCountry}`}
@@ -391,7 +401,7 @@ export default function App() {
             <DualAxisChart
               country={selectedCountry}
               data={filteredData}
-              className="w-full max-h-[80vh] h-full min-h-[60vh]"
+              className="w-full h-full min-h-[600px]"
             />
           </FullChartModal>
         )}
@@ -401,7 +411,7 @@ export default function App() {
             title={`HPI Timeline — ${selectedCountry}`}
             onClose={() => setFocusedView(null)}
           >
-            <LineChart country={selectedCountry} data={filteredData} className="w-full max-h-[80vh] h-full min-h-[60vh]" />
+            <LineChart country={selectedCountry} data={filteredData} className="w-full h-full min-h-[600px]" />
           </FullChartModal>
         )}
 
@@ -410,7 +420,7 @@ export default function App() {
             title={`HPI vs Interest Rate Change — ${selectedCountry}`}
             onClose={() => setFocusedView(null)}
           >
-            <ScatterPlot country={selectedCountry} data={filteredData} className="w-full max-h-[80vh] h-full min-h-[60vh]" />
+            <ScatterPlot country={selectedCountry} data={filteredData} className="w-full h-full min-h-[600px]" />
           </FullChartModal>
         )}
 
@@ -419,7 +429,7 @@ export default function App() {
             title={`Analytical Summary — ${selectedCountry} (${yearRange[0]}-${yearRange[1]})`}
             onClose={() => setShowAnalysis(false)}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <TopCountriesMini data={allAvg} selectedCountry={selectedCountry} yearRange={yearRange} />
               <ECBImpactMini pre={ecbImpact.preECB} post={ecbImpact.postECB} delta={ecbImpact.delta} selectedCountry={selectedCountry} yearRange={yearRange} />
               <VolatilityMini country={selectedCountry} volatility={selectedCountryVolatility} euAverage={averageEUVolatility} yearRange={yearRange} />
