@@ -29,7 +29,7 @@ export default function DualAxisChart({ country, data, className }: DualAxisProp
     const width = containerWidth - margin.left - margin.right;
     const height = containerHeight - margin.top - margin.bottom;
 
-    const filteredData = data.filter(d => d.country === country);
+    const filteredData = data.filter(d => d.countryName === country);
     if (!filteredData.length) return;
 
     const svg = d3.select(svgRef.current);

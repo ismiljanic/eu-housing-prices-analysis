@@ -16,21 +16,20 @@ export default function LineChart({ country, data, className }: LineChartProps) 
     if (!data || !country || !containerRef.current) return;
 
     const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
-
     const margin = {
       top: containerHeight * 0.05,
       right: containerWidth * 0.07,
-      bottom: containerHeight * 0.08,
+      bottom: containerHeight * 0.15,
       left: containerWidth * 0.08
     };
 
+    const width = containerWidth - margin.left - margin.right;
+    const height = containerHeight - margin.top - margin.bottom;
     const fontSize = Math.max(12, containerWidth * 0.012);
     const lineWidth = Math.max(2, containerWidth * 0.003);
     const circleRadius = Math.max(3, containerWidth * 0.006);
-    const width = containerWidth - margin.left - margin.right;
-    const height = containerHeight - margin.top - margin.bottom;
 
-    const filteredData = data.filter(d => d.country === country);
+    const filteredData = data.filter(d => d.countryName === country);
     if (!filteredData.length) return;
 
     const parseDate = d3.timeParse("%Y-Q%q");
@@ -39,7 +38,6 @@ export default function LineChart({ country, data, className }: LineChartProps) 
     const svg = d3.select(svgRef.current)
       .attr("width", containerWidth)
       .attr("height", containerHeight);
-
     svg.selectAll("*").remove();
 
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -49,34 +47,31 @@ export default function LineChart({ country, data, className }: LineChartProps) 
       .range([0, width]);
 
     const y = d3.scaleLinear()
-      .domain([d3.min(filteredData, d => d.hpi) * 0.95, d3.max(filteredData, d => d.hpi) * 1.05])
+      .domain([d3.min(filteredData, d => d.inflation)! * 0.95, d3.max(filteredData, d => d.inflation)! * 1.05])
       .range([height, 0]);
 
     const xAxis = g.append("g")
-      .attr("class", "x-axis")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(5));
+      .call(d3.axisBottom(x).ticks(5))
+      .selectAll("text")
+      .style("font-size", fontSize);
 
     const yAxis = g.append("g")
-      .attr("class", "y-axis")
-      .call(d3.axisLeft(y));
-
-    xAxis.selectAll("text").style("font-size", fontSize);
-    yAxis.selectAll("text").style("font-size", fontSize);
+      .call(d3.axisLeft(y))
+      .selectAll("text")
+      .style("font-size", fontSize);
 
     g.append("g")
-      .attr("class", "grid")
       .call(d3.axisLeft(y).tickSize(-width).tickFormat(() => ""))
       .attr("opacity", 0.1);
 
     const line = d3.line<any>()
       .x(d => x(d.date))
-      .y(d => y(d.hpi));
+      .y(d => y(d.inflation));
 
     const lineDuration = 600;
 
     const path = g.selectAll(".line-path").data([filteredData]);
-
     path.join(
       enter => enter.append("path")
         .attr("class", "line-path")
@@ -94,30 +89,10 @@ export default function LineChart({ country, data, className }: LineChartProps) 
             .ease(d3.easeLinear)
             .attr("stroke-dashoffset", 0)
             .on("end", () => {
-              g.selectAll(".data-circle")
-                .transition()
-                .duration(800)
-                .attr("r", circleRadius);
+              g.selectAll(".data-circle").transition().duration(800).attr("r", circleRadius);
             });
         }),
-      update => update
-        .attr("d", line)
-        .each(function () {
-          const totalLength = (this as SVGPathElement).getTotalLength();
-          d3.select(this)
-            .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
-            .attr("stroke-dashoffset", totalLength)
-            .transition()
-            .duration(lineDuration)
-            .ease(d3.easeLinear)
-            .attr("stroke-dashoffset", 0)
-            .on("end", () => {
-              g.selectAll(".data-circle")
-                .transition()
-                .duration(800)
-                .attr("r", circleRadius);
-            });
-        })
+      update => update.attr("d", line)
     );
 
     const tooltip = getTooltip("lineChart");
@@ -126,60 +101,51 @@ export default function LineChart({ country, data, className }: LineChartProps) 
       .data(filteredData);
 
     circles.join(
-      enter => {
-        const c = enter.append("circle")
-          .attr("class", "data-circle")
-          .attr("r", 0)
-          .attr("cx", d => x(d.date))
-          .attr("cy", d => y(d.hpi))
-          .attr("fill", "steelblue")
-          .on("mouseover", (event, d) => {
-            tooltip.style("opacity", 1)
-              .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`);
-          })
-          .on("mousemove", (event) => {
-            tooltip.style("left", `${event.pageX + 12}px`)
-              .style("top", `${event.pageY + 12}px`);
-          })
-          .on("mouseout", () => tooltip.style("opacity", 0));
-
-        c.transition().duration(800).attr("r", circleRadius);
-        return c;
-      },
-      update => {
-        update.transition().duration(800)
-          .attr("cx", d => x(d.date))
-          .attr("cy", d => y(d.hpi))
-          .attr("r", circleRadius);
-        return update;
-      }
-    );
-
-    circles.join(
       enter => enter.append("circle")
         .attr("class", "data-circle")
         .attr("r", 0)
         .attr("cx", d => x(d.date))
-        .attr("cy", d => y(d.hpi))
+        .attr("cy", d => y(d.inflation))
         .attr("fill", "steelblue")
-        .call(sel => sel.transition().duration(800).attr("r", circleRadius)),
-      update => update.transition().duration(800).attr("cx", d => x(d.date)).attr("cy", d => y(d.hpi)).attr("r", circleRadius)
-    )
-      .on("mouseover", (event, d) => {
-        tooltip.style("opacity", 1)
-          .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`);
-      })
-      .on("mousemove", (event) => {
-        tooltip.style("left", `${event.pageX + 12}px`)
-          .style("top", `${event.pageY + 12}px`);
-      })
-      .on("mouseout", () => tooltip.style("opacity", 0));
+        .attr("opacity", "0.5")
+        .on("mouseover", (event, d) => {
+          tooltip.style("opacity", 1)
+            .html(`<strong>${d.year} ${d.quarter}</strong><br>Inflation: ${d.inflation.toFixed(2)}%`)
+            .style("left", `${event.pageX + 12}px`)
+            .style("top", `${event.pageY + 12}px`);
+        })
+        .on("mousemove", (event) => {
+          tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0))
+        .transition().duration(800).attr("r", circleRadius),
+      update => update.transition().duration(800)
+        .attr("cx", d => x(d.date))
+        .attr("cy", d => y(d.inflation))
+        .attr("r", circleRadius)
+    );
 
     const legend = svg.append("g")
-      .attr("transform", `translate(${margin.left + width / 2 - 40}, ${margin.top / 2})`);
-
+      .attr("transform", `translate(${margin.left + width / 2 - 50}, ${margin.top / 2})`);
     legend.append("rect").attr("width", 12).attr("height", 12).attr("fill", "steelblue");
-    legend.append("text").attr("x", 18).attr("y", 10).style("font-size", fontSize).text("HPI");
+    legend.append("text").attr("x", 18).attr("y", 10).style("font-size", fontSize).text("Inflation");
+
+    svg.append("text")
+      .attr("x", margin.left + width / 2)
+      .attr("y", containerHeight - 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", fontSize)
+      .attr("fill", "#333")
+      .text("Year / Quarter");
+
+    svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("x", - (margin.top + height / 2))
+      .attr("y", 15)
+      .attr("text-anchor", "middle")
+      .attr("font-size", fontSize)
+      .attr("fill", "#333")
+      .text("Inflation (%)");
 
   }, [country, data, containerRef.current?.clientWidth, containerRef.current?.clientHeight]);
 

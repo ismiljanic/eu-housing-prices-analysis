@@ -33,9 +33,11 @@ export default function ScatterPlot({ country, data, className }: ScatterProps) 
 
 
     const filteredData = data.filter(d =>
-      d.country === country &&
-      d.hpi_qoq_change != null && !isNaN(d.hpi_qoq_change) &&
-      d.interest_rate_qoq_change != null && !isNaN(d.interest_rate_qoq_change)
+      d.countryName === country &&
+      d.hpi_qoq_change != null &&
+      !isNaN(d.hpi_qoq_change) &&
+      d.interest_rate_qoq_change != null &&
+      !isNaN(d.interest_rate_qoq_change)
     );
 
     const svg = d3.select(svgRef.current).attr("width", containerWidth).attr("height", containerHeight);

@@ -7,16 +7,24 @@ interface MapProps {
   selectedCountry: string;
   onCountrySelect: (country: string) => void;
   className?: string;
+  isoToName?: Record<string, string>;
 }
 
 export default function ChoroplethMap({
   data,
   selectedCountry,
   onCountrySelect,
-  className
+  className,
+  isoToName = {}
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const nameToIso = Object.fromEntries(Object.entries(isoToName).map(([iso, name]) => [name, iso]));
+
+  const getCountryCode = (properties: any) => {
+    return properties.iso_a2_eh || properties.wb_a2 || properties.fips_10 || properties.iso_a2;
+  };
 
   useEffect(() => {
     if (!containerRef.current || !data?.length) return;
@@ -44,14 +52,30 @@ export default function ChoroplethMap({
     const path = d3.geoPath().projection(projection);
     const g = svg.append("g");
 
-    const valueByCountry = d3.rollup(
+    // Rollups for HPI and Inflation
+    const hpiByCountry = d3.rollup(
       data,
-      v => d3.mean(v, d => d.hpi),
-      d => d.country
+      v => d3.mean(v, d => {
+        const hpi = +d.hpi;
+        return isNaN(hpi) ? undefined : hpi;
+      }),
+      d => d.countryName
     );
 
+    const inflationByCountry = d3.rollup(
+      data,
+      v => d3.mean(v, d => {
+        const inf = +d.inflation;
+        return isNaN(inf) ? undefined : inf;
+      }),
+      d => d.countryName
+    );
+
+    console.log(inflationByCountry)
+    // Color scale stays based on HPI (or you can pick inflation)
     const color = d3.scaleSequential(d3.interpolateBlues)
-      .domain(d3.extent(Array.from(valueByCountry.values())) as [number, number]);
+      .domain(d3.extent(Array.from(hpiByCountry.values())) as [number, number]);
+
 
     const tooltip = getTooltip("tooltip");
 
@@ -63,17 +87,28 @@ export default function ChoroplethMap({
         .attr("fill", "#eee")
         .attr("stroke", "#666")
         .attr("stroke-width", 0.6)
-        .style("cursor", d => valueByCountry.has(d.properties.iso_a2) ? "pointer" : "default")
+        .style("cursor", d => {
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          return hpiByCountry.has(name) ? "pointer" : "default";
+        })
         .on("click", (_, d: any) => {
-          if (valueByCountry.has(d.properties.iso_a2)) {
-            onCountrySelect(d.properties.iso_a2);
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          if (hpiByCountry.has(name)) {
+            onCountrySelect(name);
           }
         })
         .on("mouseover", (event, d: any) => {
-          const v = valueByCountry.get(d.properties.iso_a2);
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          const hpi = hpiByCountry.get(name);
+          const inflation = inflationByCountry.get(name);
           tooltip
             .style("opacity", 1)
-            .html(`<strong>${d.properties.name}</strong><br/>HPI: ${v ? v.toFixed(1) : "N/A"}`)
+            .html(`<strong>${name || d.properties.name}</strong><br/>
+           HPI: ${hpi != null ? hpi.toFixed(1) : "N/A"}<br/>
+           Inflation: ${inflation != null ? inflation.toFixed(1) + "%" : "N/A"}`)
             .style("left", event.pageX + 10 + "px")
             .style("top", event.pageY - 28 + "px");
         })
@@ -82,49 +117,32 @@ export default function ChoroplethMap({
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
 
-      countries.each(function () {
-        const totalLength = (this as SVGPathElement).getTotalLength();
-        d3.select(this)
-          .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
-          .attr("stroke-dashoffset", totalLength);
-      });
-
       countries.transition()
         .duration(1000)
-        .delay((d, i) => i * 15)
-        .attr("stroke-dashoffset", 0)
-        .on("end", function (d) {
-          const v = valueByCountry.get(d.properties.iso_a2);
-          d3.select(this)
-            .transition()
-            .duration(800)
-            .attr("fill", v ? color(v) : "#eee")
-            .attr("stroke", d.properties.iso_a2 === selectedCountry ? "#111" : "#666")
-            .attr("stroke-width", d.properties.iso_a2 === selectedCountry ? 2.5 : 0.6)
-            .attr("filter", d.properties.iso_a2 === selectedCountry ? "url(#glow)" : null)
-            .attr("transform", d.properties.iso_a2 === selectedCountry ? "scale(1.03)" : "scale(1)")
-            .attr("transform-origin", () => {
-              const centroid = path.centroid(d as any);
-              return `${centroid[0]}px ${centroid[1]}px`;
-            });
-        });
-
-      countries.filter(d => d.properties.iso_a2 === selectedCountry)
-        .transition()
-        .duration(3000)
         .attr("fill", d => {
-          const v = valueByCountry.get(d.properties.iso_a2);
-          return v
-            ? d3.interpolateReds(0.7 + 0.3 * (v / d3.max(Array.from(valueByCountry.values()))!))
-            : "#ff6666";
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          const v = hpiByCountry.get(name);
+          return name === selectedCountry
+            ? d3.interpolateReds(0.7 + 0.3 * ((v || 0) / d3.max(Array.from(hpiByCountry.values()))!))
+            : v
+              ? color(v)
+              : "#eee";
         })
-        .attr("stroke", "#111")
-        .attr("stroke-width", 3)
-        .attr("filter", "url(#glow)")
-        .attr("transform", "scale(1.03)")
-        .attr("transform-origin", d => {
-          const centroid = path.centroid(d as any);
-          return `${centroid[0]}px ${centroid[1]}px`;
+        .attr("stroke", d => {
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          return name === selectedCountry ? "#111" : "#666";
+        })
+        .attr("stroke-width", d => {
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          return name === selectedCountry ? 2.5 : 0.6;
+        })
+        .attr("filter", d => {
+          const code = getCountryCode(d.properties);
+          const name = isoToName[code];
+          return name === selectedCountry ? "url(#glow)" : null;
         });
 
       const zoom = d3.zoom<SVGSVGElement, unknown>()
@@ -133,7 +151,7 @@ export default function ChoroplethMap({
 
       svg.call(zoom as any);
     });
-  }, [data, selectedCountry]);
+  }, [data, selectedCountry, isoToName]);
 
   return <div ref={containerRef} className={`w-full h-full ${className || ""}`}><svg ref={svgRef}></svg></div>;
 }
