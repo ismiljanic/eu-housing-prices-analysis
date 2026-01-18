@@ -29,7 +29,7 @@ This project offers an exploratory analysis of EU housing prices over the last d
 - Analytical summaries per country in sidebar
 
 ### Demo
-
+App is live [here](https://eu-housing-prices-analysis.vercel.app/)
 #### Full dashboard display
 <img src="assets/fw.png" style="max-width: 100%; height: auto;" alt="full-version">
 
