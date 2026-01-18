@@ -59,11 +59,12 @@ All charts are custom-built using D3.js. No external visualization frameworks we
 ```
 eu-housing-prices-analysis/
 ├── assets/         
-├── data/
-│   ├── enriched/
-│   ├── processed/
-│   ├── raw/
-│   ├── europe.json
+├── public/
+|    ├── data/
+|    │   ├── enriched/
+|    │   ├── processed/
+|    │   ├── raw/
+|    │   ├── europe.json
 ├── scripts/
 ├── src/
 │   ├── app/
