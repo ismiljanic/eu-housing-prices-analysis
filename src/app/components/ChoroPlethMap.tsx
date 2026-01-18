@@ -71,8 +71,6 @@ export default function ChoroplethMap({
       d => d.countryName
     );
 
-    console.log(inflationByCountry)
-    // Color scale stays based on HPI (or you can pick inflation)
     const color = d3.scaleSequential(d3.interpolateBlues)
       .domain(d3.extent(Array.from(hpiByCountry.values())) as [number, number]);
 
