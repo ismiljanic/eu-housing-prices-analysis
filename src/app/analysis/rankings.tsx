@@ -8,17 +8,19 @@ export function computeRankings(data: any[], yearRange?: [number, number]) {
         filteredData = data.filter(d => d.year >= start && d.year <= end);
     }
 
-    const byCountry = d3.group(filteredData, d => d.country);
+    const byCountry = d3.group(filteredData, d => d.countryName);
 
-    return Array.from(byCountry, ([country, values]) => {
+    return Array.from(byCountry, ([countryName, values]) => {
         const hpi = values.map(v => v.hpi).filter(Boolean);
 
         return {
-            country,
+            country: countryName,
             avgGrowth: d3.mean(hpi),
             volatility: d3.deviation(hpi),
             lastYearGrowth: d3.mean(
-                values.filter(v => v.year === Math.max(...values.map(v => v.year))).map(v => v.hpi)
+                values
+                    .filter(v => v.year === Math.max(...values.map(v => v.year)))
+                    .map(v => v.hpi)
             )
         };
     });
