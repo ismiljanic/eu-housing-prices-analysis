@@ -9,7 +9,9 @@ interface CorrelationHintMiniProps {
 }
 
 export function CorrelationHintMini({ data, selectedCountry }: CorrelationHintMiniProps) {
-    const validPairs = data
+    const filteredData = data.filter(d => d.countryName === selectedCountry);
+
+    const validPairs = filteredData
         .map(d => ({
             year: d.year,
             hpi: d.hpi_qoq_change,
@@ -29,9 +31,9 @@ export function CorrelationHintMini({ data, selectedCountry }: CorrelationHintMi
     const trendColor = corr !== null ? (corr > 0 ? "text-red-600" : "text-green-600") : "text-gray-400";
     const trendLabel = corr !== null ? (corr > 0 ? "Positive" : "Negative") : "N/A";
 
-    const selectedData = data.find(d => d.country === selectedCountry);
-    const selectedCorr = selectedData
-        ? selectedData.hpi_qoq_change! * selectedData.interest_rate_qoq_change! > 0
+    const lastPair = filteredData[filteredData.length - 1];
+    const selectedCorr = lastPair
+        ? lastPair.hpi_qoq_change! * lastPair.interest_rate_qoq_change! > 0
             ? "Positive"
             : "Negative"
         : null;
@@ -63,7 +65,7 @@ export function CorrelationHintMini({ data, selectedCountry }: CorrelationHintMi
             </div>
 
             {/* Comparison Section */}
-            {selectedData && selectedCorr && (
+            {selectedCorr && (
                 <div className="bg-gray-50 rounded-md p-2 text-s">
                     <p>
                         <span className="font-semibold">{selectedCountry}</span>'s trend

@@ -6,10 +6,18 @@ const cardBase =
 interface TopCountriesMiniProps {
   data: { country: string; avgGrowth: number | null }[];
   selectedCountry: string;
+  yearRange: [number, number];
 }
 
-export function TopCountriesMini({ data, selectedCountry, yearRange }: { data: { country: string; avgGrowth: number | null }[], selectedCountry: string, yearRange: [number, number] }) {
-  const rangeText = yearRange[0] === yearRange[1] ? `Year: ${yearRange[0]}` : `Years: ${yearRange[0]}-${yearRange[1]}`;
+const shortNames: Record<string, string> = {
+  "Czech Republic": "Czech Rep."
+};
+
+export function TopCountriesMini({ data, selectedCountry, yearRange }: TopCountriesMiniProps) {
+  const rangeText = yearRange[0] === yearRange[1] 
+    ? `Year: ${yearRange[0]}` 
+    : `Years: ${yearRange[0]}-${yearRange[1]}`;
+
   const sortedData = [...data].sort((a, b) => (b.avgGrowth ?? 0) - (a.avgGrowth ?? 0));
   const totalCountries = sortedData.length;
 
@@ -44,19 +52,20 @@ export function TopCountriesMini({ data, selectedCountry, yearRange }: { data: {
           const rank = sortedData.findIndex(c => c.country === d.country) + 1;
 
           let barColor = colorScale(rank);
-
           if (top.findIndex(t => t.country === d.country) !== -1) {
             barColor = topGradient[top.findIndex(t => t.country === d.country)];
           } else if (bottom.findIndex(b => b.country === d.country) !== -1) {
             barColor = bottomGradient[bottom.findIndex(b => b.country === d.country)];
           }
 
+          const displayName = shortNames[d.country] || d.country;
+
           return (
             <div key={d.country} className="flex items-center gap-2">
               <span
-                className={`w-12 text-sm ${isSelected ? "text-gray-900 font-semibold" : "text-gray-600"}`}
+                className={`w-28 text-sm whitespace-nowrap ${isSelected ? "text-gray-900 font-semibold" : "text-gray-600"}`}
               >
-                {d.country}
+                {displayName}
               </span>
 
               <div className="flex-1 bg-gray-100 h-3 rounded-full">
@@ -78,7 +87,7 @@ export function TopCountriesMini({ data, selectedCountry, yearRange }: { data: {
 
       {selected && (
         <p className="text-xs text-gray-500 mt-3">
-          {selectedCountry} is ranked{" "}
+          {shortNames[selectedCountry] || selectedCountry} is ranked{" "}
           <span className="font-semibold">{sortedData.findIndex(d => d.country === selectedCountry) + 1}</span> of{" "}
           {sortedData.length} for avg HPI growth.
         </p>

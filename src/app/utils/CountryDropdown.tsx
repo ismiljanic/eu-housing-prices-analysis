@@ -26,23 +26,29 @@ export function CountryDropdown({
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative inline-block text-left w-40">
+    <div
+      ref={dropdownRef}
+      className="relative inline-block text-left w-full sm:w-40"
+    >
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 flex justify-between items-center"
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 sm:py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 flex justify-between items-center"
       >
         {selectedCountry}
         <span className={`ml-2 transition-transform ${open ? "rotate-180" : ""}`}>&#9662;</span>
       </button>
 
       {open && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-          {countries.map(c => (
+        <ul className="absolute z-50 mt-1 w-full sm:w-40 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          {countries.map((c) => (
             <li
               key={c}
-              onClick={() => { onChange(c); setOpen(false); }}
-              className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+              onClick={() => {
+                onChange(c);
+                setOpen(false);
+              }}
+              className="px-4 py-3 sm:py-2 cursor-pointer hover:bg-gray-100 text-sm sm:text-sm"
             >
               {c}
             </li>
