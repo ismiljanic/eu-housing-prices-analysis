@@ -247,7 +247,7 @@ export default function App() {
         <div className="flex flex-col justify-between h-full overflow-hidden mx-auto">
 
           {/* Top Section */}
-          <div className="flex flex-col space-y-6">
+          <div className="flex flex-col space-y-6 ml-1">
             {/* Title */}
             <div>
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -313,7 +313,7 @@ export default function App() {
           </div>
 
           {/* Footer */}
-          <div className="text-xs text-gray-400 mt-6">
+          <div className="text-xs text-gray-400 mt-6 ml-2">
             Data Source: EU Housing Market
           </div>
         </div>
