@@ -10,7 +10,7 @@ import { computeRankings } from "./analysis/rankings";
 import { addChanges } from "./analysis/changes";
 import { computeECBImpact } from "./analysis/ecbImpact";
 import { TopCountriesMini } from "./utils/TopCountriesMini";
-import { ECBImpactMini } from "./utils/EcbImpactMini";
+import { ECBImpactMini } from "./utils/ECBImpactMini";
 import { VolatilityMini } from "./utils/VolatilityMini";
 import { CorrelationHintMini } from "./utils/CorrelationHintMini";
 import * as d3 from "d3";
