@@ -367,8 +367,8 @@ export default function App() {
             className="lg:col-span-4 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.99] flex flex-col"
             onClick={() => setFocusedView('lineChart')}
           >
-            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">Housing Price Index Timeline</h2>
-            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly HPI changes over time for the selected country</p>
+            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">Inflation Timeline</h2>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly inflation changes over time for the selected country</p>
 
             {/* Chart container grows to fill remaining space */}
             <div className="flex-1 w-full min-h-[250px] sm:min-h-[280px] relative overflow-hidden">
@@ -408,7 +408,7 @@ export default function App() {
 
         {focusedView === 'lineChart' && (
           <FullChartModal
-            title={`HPI Timeline — ${selectedCountry}`}
+            title={`Inflation Timeline — ${selectedCountry}`}
             onClose={() => setFocusedView(null)}
           >
             <LineChart country={selectedCountry} data={filteredData} className="w-full h-full min-h-[600px]" />
