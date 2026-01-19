@@ -41,15 +41,29 @@ export default function DualAxisChart({ country, data, className }: DualAxisProp
     const parseDate = d3.timeParse("%Y-Q%q");
     filteredData.forEach(d => d.date = parseDate(d.year + "-" + d.quarter));
 
+    const filteredDataWithGrowth = filteredData
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((d, i, arr) => {
+        if (i === 0) return { ...d, hpiGrowth: undefined };
+        const prev = arr[i - 1].hpi;
+        const growth = prev !== 0 ? ((d.hpi - prev) / prev) * 100 : undefined;
+        return { ...d, hpiGrowth: growth };
+      })
+      .filter(d => d.hpiGrowth !== undefined);
+
     const x = d3.scaleTime().domain(d3.extent(filteredData, d => d.date) as [Date, Date]).range([0, width]);
     const yLeft = d3.scaleLinear()
-      .domain([d3.min(filteredData, d => d.hpi) * 0.95, d3.max(filteredData, d => d.hpi) * 1.05])
+      .domain([
+        d3.min(filteredDataWithGrowth, d => d.hpiGrowth)! * 1.05,
+        d3.max(filteredDataWithGrowth, d => d.hpiGrowth)! * 1.05
+      ])
       .range([height, 0]);
+
     const yRight = d3.scaleLinear()
       .domain([d3.min(filteredData, d => d.interest_rate) * 1.1, d3.max(filteredData, d => d.interest_rate) * 1.1])
       .range([height, 0]);
 
-      const xAxis = g.append("g")
+    const xAxis = g.append("g")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x));
 
@@ -66,8 +80,9 @@ export default function DualAxisChart({ country, data, className }: DualAxisProp
 
     yAxisRight.selectAll("text").style("font-size", `${fontSize}px`);
 
-
-    const lineHPI = d3.line().x(d => x(d.date)).y(d => yLeft(d.hpi));
+    const lineHPI = d3.line()
+      .x(d => x(d.date))
+      .y(d => yLeft(d.hpiGrowth));
     const lineRate = d3.line().x(d => x(d.date)).y(d => yRight(d.interest_rate));
 
     const tooltip = getTooltip("dualAxis");
@@ -86,11 +101,12 @@ export default function DualAxisChart({ country, data, className }: DualAxisProp
     const lineDuration = 1200;
 
     const hpiPath = g.append("path")
-      .datum(filteredData)
+      .datum(filteredDataWithGrowth)
       .attr("fill", "none")
       .attr("stroke", "steelblue")
       .attr("stroke-width", lineWidth)
       .attr("d", lineHPI);
+
 
     const ratePath = g.append("path")
       .datum(filteredData)
@@ -159,14 +175,24 @@ export default function DualAxisChart({ country, data, className }: DualAxisProp
       rateCircles.transition().duration(800).attr("r", circleRadius);
     }, lineDuration);
 
-    hpiCircles.on("mouseover", (event, d) => {
-      tooltip.style("opacity", 1)
-        .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI: ${d.hpi.toFixed(2)}`)
-        .style("left", `${event.clientX + 12}px`)
-        .style("top", `${event.clientY + 12}px`);
-    }).on("mousemove", (event) => {
-      tooltip.style("left", `${event.clientX + 12}px`).style("top", `${event.clientY + 12}px`);
-    }).on("mouseout", () => tooltip.style("opacity", 0));
+    hpiCircles
+      .data(filteredDataWithGrowth)
+      .join("circle")
+      .attr("cx", d => x(d.date))
+      .attr("cy", d => yLeft(d.hpiGrowth))
+      .attr("r", 0)
+      .attr("fill", "steelblue")
+      .attr("opacity", 0.5)
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+          .html(`<strong>${d.year} ${d.quarter}</strong><br>HPI Growth: ${d.hpiGrowth.toFixed(2)}%`)
+          .style("left", `${event.clientX + 12}px`)
+          .style("top", `${event.clientY + 12}px`);
+      })
+      .on("mousemove", (event) => {
+        tooltip.style("left", `${event.clientX + 12}px`).style("top", `${event.clientY + 12}px`);
+      })
+      .on("mouseout", () => tooltip.style("opacity", 0));
 
     rateCircles.on("mouseover", (event, d) => {
       tooltip.style("opacity", 1)

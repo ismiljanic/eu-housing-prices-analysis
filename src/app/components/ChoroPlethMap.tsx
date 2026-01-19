@@ -52,13 +52,17 @@ export default function ChoroplethMap({
     const path = d3.geoPath().projection(projection);
     const g = svg.append("g");
 
-    // Rollups for HPI and Inflation
-    const hpiByCountry = d3.rollup(
+    const hpiGrowthByCountry = d3.rollup(
       data,
-      v => d3.mean(v, d => {
-        const hpi = +d.hpi;
-        return isNaN(hpi) ? undefined : hpi;
-      }),
+      v => {
+        const sorted = v.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        if (sorted.length < 2) return undefined;
+
+        const last = +sorted[sorted.length - 1].hpi;
+        const prev = +sorted[sorted.length - 2].hpi;
+        if (isNaN(last) || isNaN(prev) || prev === 0) return undefined;
+        return ((last - prev) / prev) * 100;
+      },
       d => d.countryName
     );
 
@@ -72,7 +76,7 @@ export default function ChoroplethMap({
     );
 
     const color = d3.scaleSequential(d3.interpolateBlues)
-      .domain(d3.extent(Array.from(hpiByCountry.values())) as [number, number]);
+      .domain(d3.extent(Array.from(hpiGrowthByCountry.values())) as [number, number]);
 
 
     const tooltip = getTooltip("tooltip");
@@ -88,25 +92,25 @@ export default function ChoroplethMap({
         .style("cursor", d => {
           const code = getCountryCode(d.properties);
           const name = isoToName[code];
-          return hpiByCountry.has(name) ? "pointer" : "default";
+          return hpiGrowthByCountry.has(name) ? "pointer" : "default";
         })
         .on("click", (_, d: any) => {
           const code = getCountryCode(d.properties);
           const name = isoToName[code];
-          if (hpiByCountry.has(name)) {
+          if (hpiGrowthByCountry.has(name)) {
             onCountrySelect(name);
           }
         })
         .on("mouseover", (event, d: any) => {
           const code = getCountryCode(d.properties);
           const name = isoToName[code];
-          const hpi = hpiByCountry.get(name);
+          const hpiGrowth = hpiGrowthByCountry.get(name);
           const inflation = inflationByCountry.get(name);
           tooltip
             .style("opacity", 1)
             .html(`<strong>${name || d.properties.name}</strong><br/>
-           HPI: ${hpi != null ? hpi.toFixed(1) : "N/A"}<br/>
-           Inflation: ${inflation != null ? inflation.toFixed(1) + "%" : "N/A"}`)
+       HPI Growth: ${hpiGrowth != null ? hpiGrowth.toFixed(2) + "%" : "N/A"}<br/>
+       Inflation: ${inflation != null ? inflation.toFixed(1) + "%" : "N/A"}`)
             .style("left", event.pageX + 10 + "px")
             .style("top", event.pageY - 28 + "px");
         })
@@ -120,9 +124,9 @@ export default function ChoroplethMap({
         .attr("fill", d => {
           const code = getCountryCode(d.properties);
           const name = isoToName[code];
-          const v = hpiByCountry.get(name);
+          const v = hpiGrowthByCountry.get(name);
           return name === selectedCountry
-            ? d3.interpolateReds(0.7 + 0.3 * ((v || 0) / d3.max(Array.from(hpiByCountry.values()))!))
+            ? d3.interpolateReds(0.7 + 0.3 * ((v || 0) / d3.max(Array.from(hpiGrowthByCountry.values()))!))
             : v
               ? color(v)
               : "#eee";
