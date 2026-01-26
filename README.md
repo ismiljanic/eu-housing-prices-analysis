@@ -17,7 +17,7 @@ This project offers an exploratory analysis of EU housing prices over the last d
 | Visualization | Purpose |
 |--------------|---------|
 | Time-series Line Chart | Track quarterly Housing Price Index (HPI) trends per country |
-| Dual-axis Line Chart | Compare HPI with ECB key interest rates |
+| ECB Rates Line Chart | Track ECB key interest rates per country|
 | EU Choropleth Map | Visualize housing price and inflation growth across countries |
 | Scatter Plot | Explore correlations between HPI growth and macroeconomic variables |
 
@@ -33,8 +33,8 @@ App is live [here](https://eu-housing-prices-analysis.vercel.app/)
 #### Full dashboard display
 <img src="assets/fw.png" style="max-width: 100%; height: auto;" alt="full-version">
 
-#### Dual axis chart
-<img src="assets/dual.png" style="max-width: 100%; height: auto;" alt="dual-axis-chart">
+#### ECB Rate Chart
+<img src="assets/ecbRate.png" style="max-width: 100%; height: auto;" alt="ecb-rate-chart">
 
 #### Line chart
 <img src="assets/line.png" style="max-width: 100%; height: auto;" alt="line-chart">
