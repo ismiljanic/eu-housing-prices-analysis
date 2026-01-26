@@ -46,9 +46,15 @@ export default function LineChart({ country, data, className }: LineChartProps) 
       .domain(d3.extent(filteredData, d => d.date) as [Date, Date])
       .range([0, width]);
 
+    const minInflation = d3.min(filteredData, d => d.inflation)!;
+    const maxInflation = d3.max(filteredData, d => d.inflation)!;
+
+    const yPadding = (maxInflation - minInflation) * 0.05;
+
     const y = d3.scaleLinear()
-      .domain([d3.min(filteredData, d => d.inflation)! * 0.95, d3.max(filteredData, d => d.inflation)! * 1.05])
+      .domain([minInflation - yPadding, maxInflation + yPadding])
       .range([height, 0]);
+
 
     const xAxis = g.append("g")
       .attr("transform", `translate(0,${height})`)
@@ -137,16 +143,6 @@ export default function LineChart({ country, data, className }: LineChartProps) 
       .attr("font-size", fontSize)
       .attr("fill", "#333")
       .text("Year / Quarter");
-
-    svg.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("x", - (margin.top + height / 2))
-      .attr("y", 15)
-      .attr("text-anchor", "middle")
-      .attr("font-size", fontSize)
-      .attr("fill", "#333")
-      .text("Inflation (%)");
-
   }, [country, data, containerRef.current?.clientWidth, containerRef.current?.clientHeight]);
 
   return <div ref={containerRef} className={`w-full h-full ${className || ""}`}><svg ref={svgRef}></svg></div>;
