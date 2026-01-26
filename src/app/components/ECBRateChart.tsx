@@ -1,0 +1,186 @@
+import { useEffect, useRef } from "react";
+import * as d3 from "d3";
+import { getTooltip } from "../utils/Tooltip";
+
+interface ECBRateLineChartProps {
+  country: string;
+  data: any[];
+  className?: string;
+}
+
+export default function ECBRateLineChart({ country, data, className }: ECBRateLineChartProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    if (!data || !country || !containerRef.current) return;
+
+    const { width: containerWidth, height: containerHeight } =
+      containerRef.current.getBoundingClientRect();
+
+    const margin = {
+      top: containerHeight * 0.05,
+      right: containerWidth * 0.07,
+      bottom: containerHeight * 0.15,
+      left: containerWidth * 0.08
+    };
+
+    const width = containerWidth - margin.left - margin.right;
+    const height = containerHeight - margin.top - margin.bottom;
+
+    const fontSize = Math.max(12, containerWidth * 0.012);
+    const lineWidth = Math.max(2, containerWidth * 0.003);
+    const circleRadius = Math.max(3, containerWidth * 0.006);
+
+    const filteredData = data.filter(d => d.countryName === country);
+    if (!filteredData.length) return;
+
+    const parseDate = d3.timeParse("%Y-Q%q");
+    filteredData.forEach(d => {
+      d.date = parseDate(`${d.year}-${d.quarter}`);
+    });
+
+    const svg = d3.select(svgRef.current)
+      .attr("width", containerWidth)
+      .attr("height", containerHeight);
+
+    svg.selectAll("*").remove();
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleTime()
+      .domain(d3.extent(filteredData, d => d.date) as [Date, Date])
+      .range([0, width]);
+
+    const minRate = d3.min(filteredData, d => d.interest_rate)!;
+    const maxRate = d3.max(filteredData, d => d.interest_rate)!;
+
+    const yPadding = (maxRate - minRate) * 0.05;
+
+    const y = d3.scaleLinear()
+      .domain([minRate - yPadding, maxRate + yPadding])
+      .range([height, 0]);
+
+
+    g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x).ticks(5))
+      .selectAll("text")
+      .style("font-size", fontSize);
+
+    g.append("g")
+      .call(d3.axisLeft(y))
+      .selectAll("text")
+      .style("font-size", fontSize);
+
+    g.append("g")
+      .call(d3.axisLeft(y).tickSize(-width).tickFormat(() => ""))
+      .attr("opacity", 0.1);
+
+    const line = d3.line<any>()
+      .x(d => x(d.date))
+      .y(d => y(d.interest_rate));
+
+    const lineDuration = 600;
+
+    const path = g.selectAll(".line-path").data([filteredData]);
+
+    path.join(
+      enter =>
+        enter.append("path")
+          .attr("class", "line-path")
+          .attr("fill", "none")
+          .attr("stroke", "orange")
+          .attr("stroke-width", lineWidth)
+          .attr("d", line)
+          .each(function () {
+            const totalLength = (this as SVGPathElement).getTotalLength();
+            d3.select(this)
+              .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
+              .attr("stroke-dashoffset", totalLength)
+              .transition()
+              .duration(lineDuration)
+              .ease(d3.easeLinear)
+              .attr("stroke-dashoffset", 0)
+              .on("end", () => {
+                g.selectAll(".data-circle")
+                  .transition()
+                  .duration(800)
+                  .attr("r", circleRadius);
+              });
+          }),
+      update => update.attr("d", line)
+    );
+
+    const tooltip = getTooltip("ecbRateLine");
+
+    const circles = g.selectAll<SVGCircleElement, any>(".data-circle")
+      .data(filteredData);
+
+    circles.join(
+      enter =>
+        enter.append("circle")
+          .attr("class", "data-circle")
+          .attr("r", 0)
+          .attr("cx", d => x(d.date))
+          .attr("cy", d => y(d.interest_rate))
+          .attr("fill", "orange")
+          .attr("opacity", 0.5)
+          .on("mouseover", (event, d) => {
+            tooltip
+              .style("opacity", 1)
+              .html(
+                `<strong>${d.year} ${d.quarter}</strong><br>
+                 ECB Rate: ${d.interest_rate.toFixed(2)}%`
+              )
+              .style("left", `${event.pageX + 12}px`)
+              .style("top", `${event.pageY + 12}px`);
+          })
+          .on("mousemove", event => {
+            tooltip
+              .style("left", `${event.pageX + 12}px`)
+              .style("top", `${event.pageY + 12}px`);
+          })
+          .on("mouseout", () => tooltip.style("opacity", 0))
+          .transition()
+          .duration(800)
+          .attr("r", circleRadius),
+      update =>
+        update.transition()
+          .duration(800)
+          .attr("cx", d => x(d.date))
+          .attr("cy", d => y(d.interest_rate))
+          .attr("r", circleRadius)
+    );
+
+    const legend = svg.append("g")
+      .attr("transform", `translate(${margin.left + width / 2 - 70}, ${margin.top / 2})`);
+
+    legend.append("rect")
+      .attr("width", 12)
+      .attr("height", 12)
+      .attr("fill", "orange");
+
+    legend.append("text")
+      .attr("x", 18)
+      .attr("y", 10)
+      .style("font-size", fontSize)
+      .text("ECB Interest Rate");
+
+    svg.append("text")
+      .attr("x", margin.left + width / 2)
+      .attr("y", containerHeight - 5)
+      .attr("text-anchor", "middle")
+      .attr("font-size", fontSize)
+      .attr("fill", "#333")
+      .text("Year / Quarter");
+
+  }, [country, data, containerRef.current?.clientWidth, containerRef.current?.clientHeight]);
+
+  return (
+    <div ref={containerRef} className={`w-full h-full ${className || ""}`}>
+      <svg ref={svgRef} />
+    </div>
+  );
+}
