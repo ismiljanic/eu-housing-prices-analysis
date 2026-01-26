@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import LineChart from "./components/LineChart";
-import DualAxisChart from "./components/DualAxis";
+import ECBRateChart from "./components/ECBRateChart";
 import ScatterPlot from "./components/ScatterPlot";
 import ChoroplethMap from "./components/ChoroPlethMap";
 import Papa from "papaparse";
@@ -20,7 +20,7 @@ export default function App() {
   const [selectedCountry, setSelectedCountry] = useState<string>('Croatia');
   const [sharedData, setSharedData] = useState<any[]>([]);
   const [yearRange, setYearRange] = useState<[number, number]>([2010, 2024]);
-  const [focusedView, setFocusedView] = useState<null | 'dualAxis' | 'lineChart' | 'scatter' | 'map'>(null);
+  const [focusedView, setFocusedView] = useState<null | 'ecbRate' | 'lineChart' | 'scatter' | 'map'>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const countries = Array.from(
@@ -352,12 +352,12 @@ export default function App() {
           {/* Top Row - Dual Axis */}
           <div
             className="lg:col-span-4 bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-lg transition-shadow cursor-pointer active:scale-[0.99]"
-            onClick={() => setFocusedView('dualAxis')}
+            onClick={() => setFocusedView('ecbRate')}
           >
-            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">HPI vs ECB Interest Rate</h2>
-            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly housing price index alongside ECB rate changes</p>
+            <h2 className="text-base md:text-lg text-gray-900 mb-1 md:mb-2">ECB Interest Rate</h2>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Quarterly ECB monetary policy rate</p>
             <div className="w-full h-[250px] sm:h-[280px] md:h-[30vh] relative overflow-hidden">
-              <DualAxisChart country={selectedCountry} data={filteredData} />
+              <ECBRateChart country={selectedCountry} data={filteredData} />
             </div>
             <p className="text-xs text-gray-400 mt-25">Click to enlarge</p>
           </div>
@@ -393,12 +393,12 @@ export default function App() {
         </div>
 
         {/* Modals & Analysis */}
-        {focusedView === 'dualAxis' && (
+        {focusedView === 'ecbRate' && (
           <FullChartModal
             title={`HPI vs ECB Interest Rate — ${selectedCountry}`}
             onClose={() => setFocusedView(null)}
           >
-            <DualAxisChart
+            <ECBRateChart
               country={selectedCountry}
               data={filteredData}
               className="w-full h-full min-h-[600px]"
