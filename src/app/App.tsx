@@ -395,7 +395,7 @@ export default function App() {
         {/* Modals & Analysis */}
         {focusedView === 'ecbRate' && (
           <FullChartModal
-            title={`HPI vs ECB Interest Rate — ${selectedCountry}`}
+            title={`ECB Interest Rate — ${selectedCountry}`}
             onClose={() => setFocusedView(null)}
           >
             <ECBRateChart
